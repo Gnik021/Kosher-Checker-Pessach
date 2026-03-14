@@ -1,0 +1,17 @@
+{
+  "unique_key": "search_Aspirin + C Brausetabletten",
+  "url": "https://medikamente.basg.gv.at/de/medicinal-products",
+  "method": "GET",
+  "payload": null,
+  "headers": {},
+  "user_data": {
+    "__crawlee": {
+      "state": 6
+    },
+    "med_name": "Aspirin + C Brausetabletten"
+  },
+  "retry_count": 3,
+  "no_retry": false,
+  "loaded_url": "https://medikamente.basg.gv.at/de/medicinal-products",
+  "handled_at": "2026-03-14 19:25:58.472857+00:00"
+}
