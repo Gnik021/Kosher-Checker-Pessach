@@ -16,37 +16,49 @@ PHARMA_SUFFIXES = [
 def normalize_med_name(name: str) -> List[str]:
     """
     Generate an intelligent sequence of search variants for a medication name.
-    1. Original name.
-    2. Name with dosage form removed.
-    3. Brand only (first word).
     """
     variants = []
     
-    # 1. Cleaned original
-    clean_original = name.strip()
+    # 0. Strip technical tags first
+    clean_original = re.sub(r"\[.*?\]", "", name)
+    clean_original = re.sub(r"\(.*?\)", "", clean_original).strip()
+    
+    # 1. Base clean
     variants.append(clean_original)
     
     # 2. Strip suffixes
     stripped = clean_original.lower()
     for suffix in PHARMA_SUFFIXES:
+        # Use word boundaries or end of string
         stripped = re.sub(rf"\b{suffix}\b", "", stripped, flags=re.I).strip()
+        stripped = re.sub(rf"{suffix}$", "", stripped, flags=re.I).strip()
+
+    # Special handling for + signs (e.g. Aspirin + C) - keep them but normalize space
+    stripped = re.sub(r"\s*\+\s*", " + ", stripped)
     
     # Clean up double spaces or trailing punctuation
     stripped = re.sub(r"\s+", " ", stripped).strip()
     stripped = re.sub(r"[,;.-]+$", "", stripped).strip()
     
     if stripped and stripped.lower() != clean_original.lower():
-        # Title case for better match possibility
         variants.append(stripped.title())
         
     # 3. Brand isolation (first word or two)
-    words = clean_original.split()
+    words = stripped.split()
     if words:
         brand = words[0]
         if brand.lower() not in [v.lower() for v in variants]:
-            variants.append(brand)
+            variants.append(brand.title())
             
-    return variants
+    # Remove duplicates while preserving order
+    seen = set()
+    unique_variants = []
+    for v in variants:
+        if v.lower() not in seen:
+            unique_variants.append(v)
+            seen.add(v.lower())
+            
+    return unique_variants
 
 def is_same_med(name1: str, name2: str) -> bool:
     """Basic fuzzy/string check to see if two med names are likely the same."""
