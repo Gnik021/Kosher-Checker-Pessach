@@ -22,14 +22,18 @@ class ApothekenSpider(scrapy.Spider):
     def __init__(self, medications: str = None, *args, **kwargs):
         super(ApothekenSpider, self).__init__(*args, **kwargs)
         
-        # Load medication list from arguments or from the standard missing_meds file
-        if medications:
-            self.med_list = medications.split(",")
-        elif os.path.exists("missing_meds.txt"):
-            with open("missing_meds.txt", "r", encoding="utf-8") as f:
-                self.med_list = [line.strip() for line in f if line.strip()]
+        v12_path = r"C:\Users\bingu\Desktop\PESSACH PROJECT\V12.csv"
+        self.med_list = []
+        if os.path.exists(v12_path):
+            try:
+                with open(v12_path, 'r', encoding='cp1252') as f:
+                    lines = f.readlines()
+                self.med_list = [l.strip() for l in lines[1:] if l.strip()]
+                self.logger.info(f"Loaded {len(self.med_list)} meds from V12.csv via text read")
+            except Exception as e:
+                self.logger.error(f"Failed to load V12.csv: {e}")
         else:
-            self.med_list = []
+            self.logger.error(f"V12.csv not found at {v12_path}")
             
         self.pdf_temp_dir = r"C:\Users\bingu\Desktop\PESSACH PROJECT\temp_pdfs"
         self.analyzer = PessachAnalyzer()

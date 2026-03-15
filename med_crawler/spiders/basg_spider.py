@@ -22,36 +22,34 @@ class BasgSpider(scrapy.Spider):
     name = "basg"
     allowed_domains = ["medikamente.basg.gv.at"]
     
-    def __init__(self, input_csv: str = None, *args, **kwargs):
+    def __init__(self, input_csv: str = None, token: str = None, *args, **kwargs):
         super(BasgSpider, self).__init__(*args, **kwargs)
         self.input_csv = input_csv or r"C:\Users\bingu\Desktop\PESSACH PROJECT\Koscher_Medikamente_Pessach.csv"
         self.pdf_temp_dir = r"C:\Users\bingu\Desktop\PESSACH PROJECT\temp_pdfs"
         self.analyzer = PessachAnalyzer()
-        self.token = None
+        self.token = token
         
         os.makedirs(self.pdf_temp_dir, exist_ok=True)
 
     def start_requests(self):
-        """Initializes requests by capturing the required API token."""
-        self.logger.info("Initializing BASG session and capturing token (Sync)...")
-        self.token = self.get_bearer_token_sync()
-        
+        """Initializes requests using the token passed as an argument."""
         if not self.token:
-            self.logger.error("Failed to capture Authorization token from BASG. Aborting spider.")
+            self.logger.error("No Authorization token provided. Use -a token='Bearer ...'")
             return
 
         try:
-            # We assume input is passed as argument or we read from missing_meds.txt
-            if hasattr(self, 'medications'):
-                meds = self.medications.split(",")
-            elif os.path.exists("missing_meds.txt"):
-                with open("missing_meds.txt", "r", encoding="utf-8") as f:
-                    meds = [line.strip() for line in f if line.strip()]
+            v12_path = r"C:\Users\bingu\Desktop\PESSACH PROJECT\V12.csv"
+            if os.path.exists(v12_path):
+                with open(v12_path, 'r', encoding='cp1252') as f:
+                    lines = f.readlines()
+                # Skip header row
+                meds = [l.strip() for l in lines[1:] if l.strip()]
+                self.logger.info(f"Loaded {len(meds)} meds from V12.csv via text read")
             else:
-                df = pd.read_csv(self.input_csv, sep=';')
-                meds = df['Medikament'].tolist()
+                self.logger.error(f"V12.csv not found at {v12_path}")
+                return
         except Exception as e:
-            self.logger.error(f"Failed to load medications: {e}")
+            self.logger.error(f"Failed to load medications from V12.csv: {e}")
             return
         
         for med in meds:
